@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redstone Notifier Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #e8559a;
+    --pink-dim: #7a2050;
+    --pink-subtle: rgba(232,85,154,0.08);
+    --bg: #0d0d0f;
+    --bg2: #141418;
+    --bg3: #1c1c22;
+    --border: #28282f;
+    --text: #e8e8f0;
+    --text-dim: #555;
+    --text-mid: #888;
+    --green: #5ecf72;
+    --amber: #f0c060;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background:var(--bg); color:var(--text); font-family:'JetBrains Mono',monospace; min-height:100vh; padding:48px 20px 80px; }
+
+  header { text-align:center; margin-bottom:52px; }
+  header h1 { font-family:'Noto Sans JP',sans-serif; font-size:clamp(1.7rem,4.5vw,2.8rem); font-weight:900; letter-spacing:0.01em; line-height:1.1; }
+  header h1 span { color:var(--pink); }
+  header p { margin-top:10px; color:var(--text-dim); font-size:0.75rem; letter-spacing:0.08em; }
+  header .docs-link {
+    display:inline-block; margin-top:12px; font-size:0.7rem; color:var(--pink);
+    text-decoration:none; border:1px solid var(--pink-dim); border-radius:3px;
+    padding:4px 14px; letter-spacing:0.08em; transition:background 0.15s;
+  }
+  header .docs-link:hover { background:var(--pink-subtle); }
+
+  .container { max-width:920px; margin:0 auto; display:grid; gap:20px; }
+  .card { background:var(--bg2); border:1px solid var(--border); border-radius:4px; padding:28px; }
+  .card-title { font-family:'Noto Sans JP',sans-serif; font-size:0.65rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--pink); margin-bottom:20px; }
+
+  .tabs { display:flex; gap:2px; margin-bottom:24px; background:var(--bg); border:1px solid var(--border); border-radius:3px; padding:3px; }
+  .tab { flex:1; padding:9px; background:none; border:none; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:0.75rem; cursor:pointer; border-radius:2px; transition:all 0.15s; letter-spacing:0.04em; }
+  .tab.active { background:var(--pink); color:white; }
+
+  .coord-row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+  .coord-field { display:flex; flex-direction:column; gap:6px; flex:1; min-width:80px; }
+  .coord-field label { font-size:0.68rem; color:var(--text-dim); letter-spacing:0.1em; }
+  .coord-field input { background:var(--bg3); border:1px solid var(--border); border-radius:3px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:1rem; padding:10px 12px; outline:none; transition:border-color 0.15s; width:100%; }
+  .coord-field input:focus { border-color:var(--pink); }
+
+  .order-input-area { display:none; }
+  .order-slots { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .slot { width:52px; height:52px; background:var(--bg3); border:1px solid var(--border); border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:0.75rem; color:var(--text-dim); cursor:pointer; transition:all 0.15s; position:relative; user-select:none; }
+  .slot.filled { border-color:var(--pink); color:var(--text); }
+  .slot .slot-num { position:absolute; top:3px; left:5px; font-size:0.55rem; color:var(--text-dim); }
+  .dir-palette { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .dir-btn { background:var(--bg3); border:1px solid var(--border); border-radius:3px; color:var(--text); cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:0.75rem; padding:6px 12px; transition:all 0.15s; }
+  .dir-btn:hover:not(:disabled) { border-color:var(--pink); color:var(--pink); }
+  .dir-btn:disabled { opacity:0.3; cursor:default; }
+  .btn-clear { background:var(--bg3); color:var(--text-dim); border:1px solid var(--border); border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:0.75rem; padding:6px 14px; cursor:pointer; transition:border-color 0.15s; }
+  .btn-clear:hover { border-color:var(--pink-dim); }
+
+  .result-area { margin-top:24px; }
+  .result-label { font-size:0.62rem; letter-spacing:0.12em; color:var(--text-dim); text-transform:uppercase; margin-bottom:12px; }
+  .sequence { display:flex; gap:0; align-items:stretch; }
+  .seq-item { flex:1; min-width:0; background:var(--bg3); border:1px solid var(--border); border-right:none; padding:14px 8px; text-align:center; position:relative; }
+  .seq-item:last-child { border-right:1px solid var(--border); border-radius:0 3px 3px 0; }
+  .seq-item:first-child { border-radius:3px 0 0 3px; }
+  .seq-item .step-num { font-size:0.55rem; color:var(--text-dim); display:block; margin-bottom:6px; }
+  .seq-item .dir-label { font-size:0.9rem; font-weight:600; }
+  .seq-item .bucket-val { font-size:0.58rem; color:var(--text-dim); display:block; margin-top:4px; }
+  .seq-item.highlight { background:var(--pink-subtle); border-color:var(--pink-dim); }
+
+  .b0{color:#e57373!important}.b1{color:#ff8a65!important}.b2{color:#ffb74d!important}
+  .b3{color:#ffd54f!important}.b4{color:#dce775!important}.b5{color:#aed581!important}
+  .b6{color:#4db6ac!important}.b7{color:#4dd0e1!important}.b8{color:#4fc3f7!important}
+  .b9{color:#7986cb!important}.b10{color:#ba68c8!important}.b11{color:#f06292!important}
+  .b12{color:#a1887f!important}.b13{color:#90a4ae!important}.b14{color:#80cbc4!important}
+  .b15{color:#ffe082!important}
+
+  .info-bar { background:var(--bg); border:1px solid var(--border); border-radius:3px; padding:10px 14px; font-size:0.7rem; color:var(--text-mid); margin-bottom:12px; display:flex; gap:20px; flex-wrap:wrap; }
+  .info-bar span b { color:var(--amber); }
+  .candidate-list { display:flex; flex-direction:column; gap:4px; max-height:340px; overflow-y:auto; }
+  .candidate-list::-webkit-scrollbar { width:4px; }
+  .candidate-list::-webkit-scrollbar-track { background:var(--bg); }
+  .candidate-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  .candidate-item { background:var(--bg3); border:1px solid var(--border); border-radius:3px; padding:9px 14px; font-size:0.78rem; display:flex; align-items:center; gap:12px; transition:border-color 0.1s; }
+  .candidate-item:hover { border-color:var(--pink-dim); }
+  .candidate-item .candidate-idx { color:var(--text-dim); font-size:0.62rem; min-width:24px; }
+  .candidate-item code { color:var(--green); flex:1; }
+  .candidate-item .region-tag { font-size:0.58rem; padding:2px 6px; border-radius:2px; background:var(--bg); border:1px solid var(--border); color:var(--text-dim); }
+  .no-result { color:var(--text-dim); font-size:0.85rem; padding:20px 0; text-align:center; }
+
+  .viz-wrap { margin-top:24px; display:flex; justify-content:center; }
+  canvas#vizCanvas { border:1px solid var(--border); border-radius:3px; background:var(--bg); }
+
+  /* HOW IT WORKS */
+  .how-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:640px){ .how-grid { grid-template-columns:1fr; } }
+  .how-block { background:var(--bg3); border:1px solid var(--border); border-radius:3px; padding:16px; }
+  .how-full { grid-column:1/-1; }
+  .how-block h3 { font-family:'Noto Sans JP',sans-serif; font-size:0.65rem; font-weight:700; letter-spacing:0.05em; color:var(--pink); margin-bottom:10px; }
+  .how-block p { font-size:0.72rem; color:var(--text-mid); line-height:1.8; margin-bottom:10px; }
+  .how-block p:last-child { margin-bottom:0; }
+  pre { background:var(--bg); border:1px solid var(--border); border-radius:3px; padding:12px; font-family:'JetBrains Mono',monospace; font-size:0.67rem; color:var(--text-mid); line-height:1.75; overflow-x:auto; margin-top:8px; }
+  pre .kw  { color:#c792ea; }
+  pre .cls { color:var(--amber); }
+  pre .fn  { color:#82aaff; }
+  pre .cm  { color:#4a5568; font-style:italic; }
+  pre .num { color:#f78c6c; }
+
+  @media(max-width:500px){
+    .sequence { flex-wrap:wrap; }
+    .seq-item { flex:0 0 calc(25% - 6px); border-right:1px solid var(--border)!important; border-radius:3px!important; margin:2px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Redstone <span>Notifier</span> Order</h1>
+  <p>Java Edition 1.21.1 · DefaultRedstoneWireEvaluator · HashSet bucket analysis</p>
+  <a class="docs-link" href="docs/">All 60 patterns &amp; probabilities →</a>
+</header>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title">Mode</div>
+    <div class="tabs">
+      <button class="tab active" onclick="setMode('forward')">Coord → Order</button>
+      <button class="tab" onclick="setMode('reverse')">Order → Coord candidates</button>
+    </div>
+    <div id="forwardArea">
+      <div class="coord-row">
+        <div class="coord-field"><label>X</label><input type="number" id="inX" value="0" oninput="autoForward()"></div>
+        <div class="coord-field"><label>Y</label><input type="number" id="inY" value="64" oninput="autoForward()"></div>
+        <div class="coord-field"><label>Z</label><input type="number" id="inZ" value="0" oninput="autoForward()"></div>
+      </div>
+    </div>
+    <div id="reverseArea" class="order-input-area">
+      <div class="result-label">Click directions in observed order (1 → 7)</div>
+      <div class="order-slots" id="orderSlots"></div>
+      <div class="dir-palette" id="dirPalette"></div>
+      <button class="btn-clear" onclick="clearOrder()">clear</button>
+    </div>
+    <div class="result-area" id="resultArea" style="display:none">
+      <div id="resultContent"></div>
+      <div class="viz-wrap"><canvas id="vizCanvas" width="280" height="280"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">How it works</div>
+    <div class="how-grid">
+
+      <div class="how-block">
+        <h3>1 · Vec3i.hashCode()</h3>
+        <p><code style="color:var(--amber)">BlockPos</code> extends <code style="color:var(--amber)">Vec3i</code> and inherits its hash. The formula encodes all three axes into a single 32-bit integer.</p>
+<pre><span class="cm">// net.minecraft.core.Vec3i</span>
+<span class="kw">public int</span> <span class="fn">hashCode</span>() {
+  <span class="kw">return</span> (<span class="fn">getY</span>() + <span class="fn">getZ</span>() * <span class="num">31</span>) * <span class="num">31</span>
+       + <span class="fn">getX</span>();
+}</pre>
+      </div>
+
+      <div class="how-block">
+        <h3>2 · HashMap internal spread</h3>
+        <p>Java's <code style="color:var(--amber)">HashMap</code> applies an XOR-spread before assigning a bucket. This code is <em>inside the JDK</em>, invisible in Minecraft source.</p>
+<pre><span class="cm">// java.util.HashMap  (JDK internal)</span>
+<span class="kw">static final int</span> <span class="fn">hash</span>(<span class="cls">Object</span> key) {
+  <span class="kw">int</span> h = key.<span class="fn">hashCode</span>();
+  <span class="kw">return</span> h ^ (h >>> <span class="num">16</span>);
+}
+<span class="cm">// bucket = hash(key) &amp; (capacity−1)
+//        = hash(key) &amp; 15</span></pre>
+      </div>
+
+      <div class="how-block how-full">
+        <h3>3 · DefaultRedstoneWireEvaluator.updatePowerStrength()</h3>
+        <p>When power changes, a <code style="color:var(--amber)">HashSet&lt;BlockPos&gt;</code> (initial capacity 16) is built by inserting <b>SELF</b> then <code style="color:var(--amber)">Direction.values()</code> in enum order: <b>DOWN, UP, NORTH, SOUTH, WEST, EAST</b>. Iterating the set — bucket 0→15, ties broken by insertion order — drives the <code style="color:var(--amber)">updateNeighborsAt()</code> calls.</p>
+<pre><span class="cm">// net.minecraft.world.level.redstone.DefaultRedstoneWireEvaluator</span>
+<span class="kw">public void</span> <span class="fn">updatePowerStrength</span>(<span class="cls">Level</span> level, <span class="cls">BlockPos</span> pos,
+    <span class="cls">BlockState</span> state, <span class="cls">Orientation</span> orientation, <span class="kw">boolean</span> added) {
+
+  <span class="kw">int</span> i = <span class="fn">calculateTargetStrength</span>(level, pos);
+  <span class="kw">if</span> (state.<span class="fn">getValue</span>(<span class="cls">RedStoneWireBlock</span>.POWER) != i) {
+    <span class="kw">if</span> (level.<span class="fn">getBlockState</span>(pos) == state)
+      level.<span class="fn">setBlock</span>(pos, state.<span class="fn">setValue</span>(<span class="cls">RedStoneWireBlock</span>.POWER, i), <span class="num">2</span>);
+
+    <span class="cm">// Insertion order: SELF, DOWN, UP, NORTH, SOUTH, WEST, EAST</span>
+    <span class="cls">HashSet</span>&lt;<span class="cls">BlockPos</span>&gt; set = <span class="cls">Sets</span>.<span class="fn">newHashSet</span>();
+    set.<span class="fn">add</span>(pos);
+    <span class="kw">for</span> (<span class="cls">Direction</span> dir : <span class="cls">Direction</span>.<span class="fn">values</span>())
+      set.<span class="fn">add</span>(pos.<span class="fn">relative</span>(dir));
+
+    <span class="cm">// Iteration order = bucket order = coordinate-dependent</span>
+    <span class="kw">for</span> (<span class="cls">BlockPos</span> p : set)
+      level.<span class="fn">updateNeighborsAt</span>(p, wireBlock);
+  }
+}</pre>
+      </div>
+
+      <div class="how-block how-full">
+        <h3>4 · Why 60 patterns across the world</h3>
+        <p>Near the origin where <code style="color:var(--amber)">|hashCode| &lt; 65536</code>, the term <code style="color:var(--amber)">h &gt;&gt;&gt; 16</code> is zero and the XOR has no effect, producing 26 distinct patterns that repeat with period 16. For large coordinates where <code style="color:var(--amber)">|hashCode| ≥ 65536</code>, upper bits bleed into the lower 16 via XOR, unlocking 34 additional rare patterns — totalling <b>60</b>. About 97% of all wire positions share just 6 patterns; the rarest appears in only ~0.005% of locations.</p>
+        <p>→ <a href="docs/" style="color:var(--pink)">See all 60 patterns with exact probabilities.</a></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function hashcode(x,y,z){return Math.imul(y+Math.imul(z,31),31)+x|0;}
+function mapHash(h){const u=h>>>0;return(u^(u>>>16))|0;}
+function bucket(x,y,z){return(mapHash(hashcode(x,y,z))>>>0)&15;}
+const DIRS=[
+  {label:'O', dx:0,dy:0,dz:0},{label:'-Y',dx:0,dy:-1,dz:0},{label:'+Y',dx:0,dy:1,dz:0},
+  {label:'-Z',dx:0,dy:0,dz:-1},{label:'+Z',dx:0,dy:0,dz:1},{label:'-X',dx:-1,dy:0,dz:0},{label:'+X',dx:1,dy:0,dz:0}
+];
+function getOrder(bx,by,bz){
+  const t=Array.from({length:16},()=>[]);
+  for(const d of DIRS){const b=(mapHash(hashcode(bx+d.dx,by+d.dy,bz+d.dz))>>>0)&15;t[b].push({...d,bucket:b});}
+  return t.flat();
+}
+
+function autoForward(){
+  const x=parseInt(document.getElementById('inX').value)||0;
+  const y=parseInt(document.getElementById('inY').value)||0;
+  const z=parseInt(document.getElementById('inZ').value)||0;
+  const order=getOrder(x,y,z);
+  document.getElementById('resultArea').style.display='block';
+  let html=`<div class="result-label">Notifier update order for (${x}, ${y}, ${z})</div><div class="sequence">`;
+  for(let i=0;i<order.length;i++){
+    const e=order[i];
+    html+=`<div class="seq-item${e.label==='O'?' highlight':''}"><span class="step-num">${i+1}</span><span class="dir-label b${e.bucket}">${e.label}</span><span class="bucket-val">b${e.bucket}</span></div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('resultContent').innerHTML=html;
+  drawViz(order,x,y,z);
+}
+
+let selectedOrder=[];
+function initReverseUI(){
+  const slotsEl=document.getElementById('orderSlots');
+  slotsEl.innerHTML='';
+  for(let i=0;i<7;i++){const s=document.createElement('div');s.className='slot';s.id=`slot${i}`;s.innerHTML=`<span class="slot-num">${i+1}</span>`;s.onclick=()=>removeSlot(i);slotsEl.appendChild(s);}
+  const pal=document.getElementById('dirPalette');
+  pal.innerHTML='';
+  for(let i=0;i<DIRS.length;i++){const b=document.createElement('button');b.className='dir-btn';b.id=`dirBtn${i}`;b.textContent=DIRS[i].label;b.onclick=()=>addDir(i);pal.appendChild(b);}
+}
+function addDir(idx){if(selectedOrder.length>=7||selectedOrder.includes(idx))return;selectedOrder.push(idx);updateReverseUI();if(selectedOrder.length===7)runReverse();}
+function removeSlot(i){if(i>=selectedOrder.length)return;selectedOrder.splice(i,1);document.getElementById('resultArea').style.display='none';updateReverseUI();}
+function clearOrder(){selectedOrder=[];document.getElementById('resultArea').style.display='none';updateReverseUI();}
+function updateReverseUI(){
+  for(let i=0;i<7;i++){const s=document.getElementById(`slot${i}`);if(i<selectedOrder.length){s.className='slot filled';s.innerHTML=`<span class="slot-num">${i+1}</span>${DIRS[selectedOrder[i]].label}`;}else{s.className='slot';s.innerHTML=`<span class="slot-num">${i+1}</span>`;}}
+  for(let i=0;i<DIRS.length;i++)document.getElementById(`dirBtn${i}`).disabled=selectedOrder.includes(i);
+}
+function runReverse(){
+  const obs=selectedOrder.map(i=>DIRS[i]);
+  const small=[];
+  for(let y=-64;y<-64+16;y++)for(let x=0;x<16;x++)for(let z=0;z<16;z++){
+    const ord=getOrder(x,y,z);
+    if(ord.every((e,i)=>e.dx===obs[i].dx&&e.dy===obs[i].dy&&e.dz===obs[i].dz))small.push({x,y,z});
+  }
+  const large=[];
+  const xB=[65536,-65536,65537,-65537,131072,-131072],zB=[0,2114,-2114,4228,-4228];
+  outer:for(const ox of xB)for(const oz of zB)for(let y=-64;y<=320;y+=16)for(let dx=0;dx<16;dx++)for(let dz=0;dz<16;dz++){
+    const x=ox+dx,z=oz+dz;const ord=getOrder(x,y,z);
+    if(ord.every((e,i)=>e.dx===obs[i].dx&&e.dy===obs[i].dy&&e.dz===obs[i].dz))large.push({x,y,z});
+    if(large.length>20)break outer;
+  }
+  const ra=document.getElementById('resultArea');ra.style.display='block';
+  const orderStr=selectedOrder.map(i=>DIRS[i].label).join(', ');
+  let html=`<div class="result-label">Candidates for order: ${orderStr}</div>`;
+  if(!small.length&&!large.length){html+=`<div class="no-result">No candidates found. This order may not occur in vanilla Minecraft.</div>`;document.getElementById('resultContent').innerHTML=html;return;}
+  if(small.length){
+    html+=`<div class="info-bar"><span>Small-coord region: <b>${small.length}</b> base coords (period 16)</span><span><b>(x+16k, y+16j, z+16m)</b>  k,j,m ∈ ℤ,  |x|,|z| &lt; 65536</span></div><div class="candidate-list">`;
+    small.forEach(({x,y,z},i)=>{html+=`<div class="candidate-item"><span class="candidate-idx">#${i+1}</span><code>(${x}+16k, ${y}+16j, ${z}+16m)</code><span class="region-tag">|x|,|z|&lt;65536</span></div>`;});
+    html+=`</div>`;
+  }
+  if(large.length){
+    html+=`<div class="info-bar" style="margin-top:12px"><span>Large-coord samples: <b>${large.length}</b> found near ±65536 boundaries</span></div><div class="candidate-list">`;
+    large.forEach(({x,y,z},i)=>{html+=`<div class="candidate-item"><span class="candidate-idx">#${i+1}</span><code>(${x}, ${y}, ${z})</code><span class="region-tag">large-coord</span></div>`;});
+    html+=`</div>`;
+  }
+  document.getElementById('resultContent').innerHTML=html;
+  const first=small.length?small[0]:large[0];
+  drawViz(getOrder(first.x,first.y,first.z),first.x,first.y,first.z);
+}
+
+function drawViz(order,bx,by,bz){
+  const canvas=document.getElementById('vizCanvas');const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2,S=54;const proj=(dx,dz)=>({sx:cx+dx*S,sy:cy+dz*S});
+  const colors=['#e57373','#ff8a65','#ffb74d','#ffd54f','#dce775','#aed581','#4db6ac','#4dd0e1','#4fc3f7','#7986cb','#ba68c8','#f06292','#a1887f','#90a4ae','#80cbc4','#ffe082'];
+  ctx.strokeStyle='#282830';ctx.lineWidth=1;
+  for(const e of order){if(!e.dx&&!e.dy&&!e.dz)continue;const p=proj(e.dx,e.dz),c=proj(0,0);ctx.beginPath();ctx.moveTo(c.sx,c.sy);ctx.lineTo(p.sx,p.sy);ctx.stroke();}
+  for(let i=0;i<order.length;i++){
+    const e=order[i];const p=proj(e.dx,e.dz);const r=e.label==='O'?22:18;const col=colors[e.bucket];
+    ctx.beginPath();ctx.arc(p.sx,p.sy,r,0,Math.PI*2);ctx.fillStyle=e.label==='O'?'rgba(232,85,154,0.12)':'rgba(14,14,18,0.92)';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=e.label==='O'?2:1.5;ctx.stroke();
+    ctx.fillStyle=col;ctx.font=`bold ${r<20?10:11}px JetBrains Mono,monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i+1,p.sx,p.sy-4);
+    ctx.fillStyle='#888';ctx.font='9px JetBrains Mono,monospace';ctx.fillText(e.label,p.sx,p.sy+7);
+    if(e.dy){ctx.fillStyle='#555';ctx.font='8px JetBrains Mono,monospace';ctx.fillText(e.dy>0?'↑':'↓',p.sx+r-2,p.sy-r+2);}
+  }
+  ctx.fillStyle='#333';ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillText('XZ plane  (↑ = −Z north, → = +X east)',8,8);ctx.fillText(`(${bx}, ${by}, ${bz})`,8,H-16);
+}
+
+let currentMode='forward';
+function setMode(mode){
+  currentMode=mode;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0)===(mode==='forward')));
+  document.getElementById('forwardArea').style.display=mode==='forward'?'':'none';
+  document.getElementById('reverseArea').style.display=mode==='reverse'?'block':'none';
+  document.getElementById('resultArea').style.display='none';
+  if(mode==='forward')autoForward();else{initReverseUI();clearOrder();}
+}
+autoForward();
+</script>
+</body>
+</html>
