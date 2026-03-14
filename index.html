@@ -68,16 +68,11 @@
   .seq-item:last-child { border-right:1px solid var(--border); border-radius:0 3px 3px 0; }
   .seq-item:first-child { border-radius:3px 0 0 3px; }
   .seq-item .step-num { font-size:0.55rem; color:var(--text-dim); display:block; margin-bottom:6px; }
-  .seq-item .dir-label { font-size:0.9rem; font-weight:600; }
-  .seq-item .bucket-val { font-size:0.58rem; color:var(--text-dim); display:block; margin-top:4px; }
+  .seq-item .dir-label { font-size:0.9rem; font-weight:600; color:var(--text); }
+  .seq-item .bucket-val { display:none; }
   .seq-item.highlight { background:var(--pink-subtle); border-color:var(--pink-dim); }
-
-  .b0{color:#e57373!important}.b1{color:#ff8a65!important}.b2{color:#ffb74d!important}
-  .b3{color:#ffd54f!important}.b4{color:#dce775!important}.b5{color:#aed581!important}
-  .b6{color:#4db6ac!important}.b7{color:#4dd0e1!important}.b8{color:#4fc3f7!important}
-  .b9{color:#7986cb!important}.b10{color:#ba68c8!important}.b11{color:#f06292!important}
-  .b12{color:#a1887f!important}.b13{color:#90a4ae!important}.b14{color:#80cbc4!important}
-  .b15{color:#ffe082!important}
+  .seq-item.highlight .dir-label { color:var(--pink); }
+  .b0,.b1,.b2,.b3,.b4,.b5,.b6,.b7,.b8,.b9,.b10,.b11,.b12,.b13,.b14,.b15 { color:inherit!important; }
 
   .info-bar { background:var(--bg); border:1px solid var(--border); border-radius:3px; padding:10px 14px; font-size:0.7rem; color:var(--text-mid); margin-bottom:12px; display:flex; gap:20px; flex-wrap:wrap; }
   .info-bar span b { color:var(--amber); }
@@ -93,7 +88,7 @@
   .no-result { color:var(--text-dim); font-size:0.85rem; padding:20px 0; text-align:center; }
 
   .viz-wrap { margin-top:24px; display:flex; justify-content:center; }
-  canvas#vizCanvas { border:1px solid var(--border); border-radius:3px; background:var(--bg); }
+  #isoViz { border:1px solid var(--border); border-radius:3px; background:var(--bg); display:block; }
 
   /* HOW IT WORKS */
   .how-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
@@ -114,6 +109,22 @@
     .sequence { flex-wrap:wrap; }
     .seq-item { flex:0 0 calc(25% - 6px); border-right:1px solid var(--border)!important; border-radius:3px!important; margin:2px; }
   }
+
+  /* NOTIFIER SECTION */
+  .notifier-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:640px){ .notifier-grid { grid-template-columns:1fr; } }
+  .notifier-block { background:var(--bg3); border:1px solid var(--border); border-radius:3px; padding:16px; }
+  .notifier-full { grid-column:1/-1; }
+  .notifier-block h3 { font-family:'Noto Sans JP',sans-serif; font-size:0.65rem; font-weight:700; letter-spacing:0.05em; color:var(--pink); margin-bottom:10px; }
+  .notifier-block p { font-size:0.72rem; color:var(--text-mid); line-height:1.8; margin-bottom:8px; }
+  .notifier-block p:last-child { margin-bottom:0; }
+
+  .notifier-flow { display:flex; flex-direction:column; gap:0; }
+  .nf-step { display:flex; align-items:flex-start; gap:12px; background:var(--bg); border:1px solid var(--border); border-radius:3px; padding:12px 14px; }
+  .nf-num { flex-shrink:0; width:20px; height:20px; border-radius:50%; background:var(--pink-subtle); border:1px solid var(--pink-dim); color:var(--pink); font-size:0.65rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .nf-text { font-size:0.72rem; color:var(--text-mid); line-height:1.75; }
+  .nf-text code { color:var(--amber); }
+  .nf-arrow { text-align:center; color:var(--border); font-size:1rem; line-height:1.2; padding:2px 0; }
 </style>
 </head>
 <body>
@@ -145,7 +156,7 @@
     </div>
     <div class="result-area" id="resultArea" style="display:none">
       <div id="resultContent"></div>
-      <div class="viz-wrap"><canvas id="vizCanvas" width="280" height="280"></canvas></div>
+      <div class="viz-wrap"><svg id="isoViz" width="320" height="300"></svg></div>
     </div>
   </div>
 
@@ -208,6 +219,50 @@
 
     </div>
   </div>
+
+  <div class="card">
+    <div class="card-title">What is a notifier?</div>
+    <div class="notifier-grid">
+
+      <div class="notifier-block">
+        <h3>Notifier</h3>
+        <p>A <b style="color:var(--text)">notifier</b> is a block position that acts as the <em>source</em> of a neighbor update. When <code style="color:var(--amber)">level.updateNeighborsAt(notifier, wireBlock)</code> is called, it triggers updates on all 6 faces of the notifier in a <b style="color:var(--text)">fixed, constant order</b>: <span style="color:var(--amber)">−X, +X, −Y, +Y, −Z, +Z</span>.</p>
+        <p>This per-notifier order is always the same regardless of world position. The coordinate dependence comes entirely from <em>which position becomes the notifier, and in what sequence the 7 notifiers fire</em>.</p>
+      </div>
+
+      <div class="notifier-block">
+        <h3>Where the coordinate dependence enters</h3>
+        <p>The 7 candidate notifiers (wire + 6 neighbours) are stored in a <code style="color:var(--amber)">HashSet</code>. Iteration order over a <code style="color:var(--amber)">HashSet</code> follows bucket index, and each bucket index is derived from <code style="color:var(--amber)">(hashCode ^ (hashCode &gt;&gt;&gt; 16)) &amp; 15</code>. Because <code style="color:var(--amber)">hashCode</code> is a function of absolute world coordinates, the firing order of the 7 notifiers — and therefore the sequence of all resulting neighbor updates — is <b style="color:var(--text)">coordinate-dependent</b>.</p>
+      </div>
+
+      <div class="notifier-block notifier-full">
+        <h3>Summary of the update sequence</h3>
+        <div class="notifier-flow">
+          <div class="nf-step">
+            <span class="nf-num">1</span>
+            <span class="nf-text">Wire's power changes → <code>updatePowerStrength()</code> called</span>
+          </div>
+          <div class="nf-arrow">↓</div>
+          <div class="nf-step">
+            <span class="nf-num">2</span>
+            <span class="nf-text">7 positions (self + ±X/Y/Z) placed into <code>HashSet</code> — order determined by <code>hashCode</code> of each absolute position</span>
+          </div>
+          <div class="nf-arrow">↓</div>
+          <div class="nf-step">
+            <span class="nf-num">3</span>
+            <span class="nf-text">Each position fires as a <b>notifier</b> in HashSet iteration order <span style="color:var(--text-dim)">(coordinate-dependent)</span></span>
+          </div>
+          <div class="nf-arrow">↓</div>
+          <div class="nf-step">
+            <span class="nf-num">4</span>
+            <span class="nf-text">Each notifier updates its 6 faces in <b>fixed order</b>: <span style="color:var(--amber)">−X, +X, −Y, +Y, −Z, +Z</span> <span style="color:var(--text-dim)">(always constant)</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -290,20 +345,100 @@ function runReverse(){
 }
 
 function drawViz(order,bx,by,bz){
-  const canvas=document.getElementById('vizCanvas');const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
-  const cx=W/2,cy=H/2,S=54;const proj=(dx,dz)=>({sx:cx+dx*S,sy:cy+dz*S});
-  const colors=['#e57373','#ff8a65','#ffb74d','#ffd54f','#dce775','#aed581','#4db6ac','#4dd0e1','#4fc3f7','#7986cb','#ba68c8','#f06292','#a1887f','#90a4ae','#80cbc4','#ffe082'];
-  ctx.strokeStyle='#282830';ctx.lineWidth=1;
-  for(const e of order){if(!e.dx&&!e.dy&&!e.dz)continue;const p=proj(e.dx,e.dz),c=proj(0,0);ctx.beginPath();ctx.moveTo(c.sx,c.sy);ctx.lineTo(p.sx,p.sy);ctx.stroke();}
-  for(let i=0;i<order.length;i++){
-    const e=order[i];const p=proj(e.dx,e.dz);const r=e.label==='O'?22:18;const col=colors[e.bucket];
-    ctx.beginPath();ctx.arc(p.sx,p.sy,r,0,Math.PI*2);ctx.fillStyle=e.label==='O'?'rgba(232,85,154,0.12)':'rgba(14,14,18,0.92)';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=e.label==='O'?2:1.5;ctx.stroke();
-    ctx.fillStyle=col;ctx.font=`bold ${r<20?10:11}px JetBrains Mono,monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i+1,p.sx,p.sy-4);
-    ctx.fillStyle='#888';ctx.font='9px JetBrains Mono,monospace';ctx.fillText(e.label,p.sx,p.sy+7);
-    if(e.dy){ctx.fillStyle='#555';ctx.font='8px JetBrains Mono,monospace';ctx.fillText(e.dy>0?'↑':'↓',p.sx+r-2,p.sy-r+2);}
+  const svg=document.getElementById('isoViz');
+  svg.innerHTML='';
+  const W=320,H=300;
+  const cx=W/2, cy=H/2+10;
+
+  // isometric projection: X→right-down, Y→up, Z→left-down
+  const SX=36, SY=20, SYv=32; // horizontal step x, z, vertical step y
+  function iso(dx,dy,dz){
+    return {
+      x: cx + (dx - dz) * SX,
+      y: cy + (dx + dz) * SY - dy * SYv
+    };
   }
-  ctx.fillStyle='#333';ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='left';ctx.textBaseline='top';
-  ctx.fillText('XZ plane  (↑ = −Z north, → = +X east)',8,8);ctx.fillText(`(${bx}, ${by}, ${bz})`,8,H-16);
+
+  function mk(tag,attrs){
+    const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+    for(const [k,v] of Object.entries(attrs)) el.setAttribute(k,v);
+    return el;
+  }
+
+  // draw axis lines
+  const axisColor='#333';
+  const axes=[
+    {to:[1.6,0,0],label:'+X',lx:1.75,ly:0,lz:0},
+    {to:[0,1.6,0],label:'+Y',lx:0,ly:1.75,lz:0},
+    {to:[0,0,1.6],label:'+Z',lx:0,ly:0,lz:1.75},
+  ];
+  for(const a of axes){
+    const o=iso(0,0,0),t=iso(...a.to);
+    svg.appendChild(mk('line',{x1:o.x,y1:o.y,x2:t.x,y2:t.y,stroke:axisColor,'stroke-width':1,'stroke-dasharray':'3,3'}));
+    const lp=iso(a.lx,a.ly,a.lz);
+    const lt=mk('text',{x:lp.x,y:lp.y,'text-anchor':'middle','dominant-baseline':'middle',fill:'#444','font-size':'9','font-family':'JetBrains Mono,monospace'});
+    lt.textContent=a.label;
+    svg.appendChild(lt);
+  }
+
+  // draw edges from center to each neighbour (faint)
+  for(const e of order){
+    if(!e.dx&&!e.dy&&!e.dz) continue;
+    const o=iso(0,0,0),p=iso(e.dx,e.dy,e.dz);
+    svg.appendChild(mk('line',{x1:o.x,y1:o.y,x2:p.x,y2:p.y,stroke:'#2c2c36','stroke-width':1.5}));
+  }
+
+  // draw nodes — sort back-to-front for painter's algorithm (larger dy first = drawn first)
+  const sorted=[...order].sort((a,b)=>(a.dx+a.dz-a.dy)-(b.dx+b.dz-b.dy));
+  for(const e of sorted){
+    const step=order.indexOf(e)+1;
+    const p=iso(e.dx,e.dy,e.dz);
+    const isCenter=(!e.dx&&!e.dy&&!e.dz);
+    const r=isCenter?14:11;
+
+    // glow for early steps
+    if(step<=3){
+      const glow=mk('circle',{cx:p.x,cy:p.y,r:r+5,fill:'none',stroke:'rgba(232,85,154,0.15)','stroke-width':4});
+      svg.appendChild(glow);
+    }
+
+    // node circle
+    const circle=mk('circle',{
+      cx:p.x,cy:p.y,r,
+      fill:isCenter?'rgba(232,85,154,0.15)':'#1a1a22',
+      stroke:isCenter?'#e8559a':'#3a3a4a',
+      'stroke-width':isCenter?1.5:1
+    });
+    svg.appendChild(circle);
+
+    // step number (large, prominent)
+    const numEl=mk('text',{
+      x:p.x,y:p.y-1,
+      'text-anchor':'middle','dominant-baseline':'middle',
+      fill:isCenter?'#e8559a':'#e0e0e8',
+      'font-size':isCenter?'11':'10',
+      'font-weight':'700',
+      'font-family':'JetBrains Mono,monospace'
+    });
+    numEl.textContent=step;
+    svg.appendChild(numEl);
+
+    // direction label below node
+    const lp=mk('text',{
+      x:p.x,y:p.y+r+9,
+      'text-anchor':'middle',
+      fill:isCenter?'#e8559a':'#666',
+      'font-size':'8',
+      'font-family':'JetBrains Mono,monospace'
+    });
+    lp.textContent=e.label;
+    svg.appendChild(lp);
+  }
+
+  // coordinate label
+  const coordEl=mk('text',{x:8,y:H-10,fill:'#333','font-size':'8','font-family':'JetBrains Mono,monospace'});
+  coordEl.textContent=`(${bx}, ${by}, ${bz})`;
+  svg.appendChild(coordEl);
 }
 
 let currentMode='forward';
