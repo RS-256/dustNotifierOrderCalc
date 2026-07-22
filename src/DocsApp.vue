@@ -5,7 +5,7 @@ import PatternTable from './components/PatternTable.vue'
 <template>
   <header>
     <h1>All <span>60</span> Notifier Patterns</h1>
-    <p>Java Edition 1.21.1 · exact counts over the full 2<sup>20</sup>-block period</p>
+    <p>Java Edition 1.21.11 · exact counts over the full 2<sup>20</sup>-block period</p>
     <a class="back-link" href="../">← back to tool</a>
   </header>
   <div class="container">
