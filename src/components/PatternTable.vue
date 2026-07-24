@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PATTERNS } from '../data/patterns'
+import { PATTERNS } from "../data/patterns"
 </script>
 
 <template>

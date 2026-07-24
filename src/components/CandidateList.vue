@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { formatPercent } from '../lib/notifier'
-import type { ReverseResult } from '../lib/notifier'
+import { formatPercent } from "../lib/notifier"
+import type { ReverseResult } from "../lib/notifier"
 
-defineProps<{
+defineProps< {
   result: ReverseResult
   orderStr: string
-}>()
+} >()
 </script>
 
 <template>

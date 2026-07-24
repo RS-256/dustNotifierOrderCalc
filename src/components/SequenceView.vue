@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { Coord, OrderEntry } from '../lib/notifier'
+import type { Coord, OrderEntry } from "../lib/notifier"
 
-defineProps<{
+defineProps< {
   order: OrderEntry[]
   coord: Coord
-}>()
+} >()
 </script>
 
 <template>

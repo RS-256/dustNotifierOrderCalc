@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { getOrder } from '../lib/notifier'
-import type { Coord } from '../lib/notifier'
+import { computed } from "vue"
+import { getOrder } from "../lib/notifier"
+import type { Coord } from "../lib/notifier"
 
-const props = defineProps<{ coord: Coord }>()
+const props = defineProps< { coord: Coord } >()
 
 const W = 320
 const H = 300
@@ -15,41 +15,41 @@ const SX = 36 // horizontal step x
 const SY = 20 // horizontal step z
 const SYV = 32 // vertical step y
 
-function iso(dx: number, dy: number, dz: number) {
+function iso( dx: number, dy: number, dz: number ) {
   return {
-    x: CX + (dx - dz) * SX,
-    y: CY + (dx + dz) * SY - dy * SYV,
+    x: CX + ( dx - dz ) * SX,
+    y: CY + ( dx + dz ) * SY - dy * SYV
   }
 }
 
 const AXES = [
-  { to: iso(1.6, 0, 0), label: '+X', at: iso(1.75, 0, 0) },
-  { to: iso(0, 1.6, 0), label: '+Y', at: iso(0, 1.75, 0) },
-  { to: iso(0, 0, 1.6), label: '+Z', at: iso(0, 0, 1.75) },
+  { to: iso( 1.6, 0, 0 ), label: "+X", at: iso( 1.75, 0, 0 ) },
+  { to: iso( 0, 1.6, 0 ), label: "+Y", at: iso( 0, 1.75, 0 ) },
+  { to: iso( 0, 0, 1.6 ), label: "+Z", at: iso( 0, 0, 1.75 ) }
 ]
-const ORIGIN = iso(0, 0, 0)
+const ORIGIN = iso( 0, 0, 0 )
 
-const order = computed(() => getOrder(props.coord.x, props.coord.y, props.coord.z))
+const order = computed( () => getOrder( props.coord.x, props.coord.y, props.coord.z ) )
 
-const edges = computed(() =>
-  order.value.filter((e) => e.dx || e.dy || e.dz).map((e) => iso(e.dx, e.dy, e.dz)),
+const edges = computed( () =>
+  order.value.filter( ( e ) => e.dx || e.dy || e.dz ).map( ( e ) => iso( e.dx, e.dy, e.dz ) )
 )
 
 // nodes sorted back-to-front for painter's algorithm
-const nodes = computed(() =>
+const nodes = computed( () =>
   order.value
-    .map((e, i) => {
-      const isCenter = !e.dx && !e.dy && !e.dz
+    .map( ( e, i ) => {
+      const isCenter = ! e.dx && ! e.dy && ! e.dz
       return {
         step: i + 1,
         label: e.label,
         depth: e.dx + e.dz - e.dy,
-        pos: iso(e.dx, e.dy, e.dz),
+        pos: iso( e.dx, e.dy, e.dz ),
         isCenter,
-        r: isCenter ? 14 : 11,
+        r: isCenter ? 14 : 11
       }
-    })
-    .sort((a, b) => a.depth - b.depth),
+    } )
+    .sort( ( a, b ) => a.depth - b.depth )
 )
 </script>
 

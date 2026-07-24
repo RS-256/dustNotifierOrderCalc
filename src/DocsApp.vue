@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PatternTable from './components/PatternTable.vue'
+import PatternTable from "./components/PatternTable.vue"
 </script>
 
 <template>

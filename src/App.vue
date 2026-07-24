@@ -1,44 +1,44 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import CandidateList from './components/CandidateList.vue'
-import HowItWorks from './components/HowItWorks.vue'
-import IsoViz from './components/IsoViz.vue'
-import NotifierInfo from './components/NotifierInfo.vue'
-import ReversePicker from './components/ReversePicker.vue'
-import SequenceView from './components/SequenceView.vue'
-import { DIRS, findCandidates, getOrder } from './lib/notifier'
-import type { Coord } from './lib/notifier'
+import { computed, ref } from "vue"
+import CandidateList from "./components/CandidateList.vue"
+import HowItWorks from "./components/HowItWorks.vue"
+import IsoViz from "./components/IsoViz.vue"
+import NotifierInfo from "./components/NotifierInfo.vue"
+import ReversePicker from "./components/ReversePicker.vue"
+import SequenceView from "./components/SequenceView.vue"
+import { DIRS, findCandidates, getOrder } from "./lib/notifier"
+import type { Coord } from "./lib/notifier"
 
-type Mode = 'forward' | 'reverse'
+type Mode = "forward" | "reverse"
 
-const mode = ref<Mode>('forward')
-const inX = ref<number | null>(0)
-const inY = ref<number | null>(64)
-const inZ = ref<number | null>(0)
-const selected = ref<number[]>([])
+const mode = ref< Mode >( "forward" )
+const inX = ref< number | null >( 0 )
+const inY = ref< number | null >( 64 )
+const inZ = ref< number | null >( 0 )
+const selected = ref< number[] >( [] )
 
-const coord = computed<Coord>(() => ({
+const coord = computed< Coord >( () => ( {
   x: inX.value ?? 0,
   y: inY.value ?? 0,
-  z: inZ.value ?? 0,
-}))
+  z: inZ.value ?? 0
+} ) )
 
-const forwardOrder = computed(() => getOrder(coord.value.x, coord.value.y, coord.value.z))
+const forwardOrder = computed( () => getOrder( coord.value.x, coord.value.y, coord.value.z ) )
 
-const reverseResult = computed(() => {
-  if (selected.value.length < 7) return null
-  return findCandidates(selected.value.map((i) => DIRS[i]!))
-})
+const reverseResult = computed( () => {
+  if ( selected.value.length < 7 ) return null
+  return findCandidates( selected.value.map( ( i ) => DIRS[ i ]! ) )
+} )
 
-const reverseOrderStr = computed(() => selected.value.map((i) => DIRS[i]!.label).join(', '))
+const reverseOrderStr = computed( () => selected.value.map( ( i ) => DIRS[ i ]!.label ).join( ", " ) )
 
 /** Coordinate whose order is drawn in the viz: input coord (forward) or nearest candidate (reverse) */
-const vizCoord = computed<Coord | null>(() => {
-  if (mode.value === 'forward') return coord.value
-  return reverseResult.value?.matches[0]?.example ?? null
-})
+const vizCoord = computed< Coord | null >( () => {
+  if ( mode.value === "forward" ) return coord.value
+  return reverseResult.value?.matches[ 0 ]?.example ?? null
+} )
 
-function setMode(m: Mode) {
+function setMode( m: Mode ) {
   mode.value = m
   selected.value = []
 }

@@ -1,7 +1,7 @@
 :root {
   --pink: #e8559a;
   --pink-dim: #7a2050;
-  --pink-subtle: rgba(232, 85, 154, 0.08);
+  --pink-subtle: rgba( 232, 85, 154, 0.08 );
   --bg: #0d0d0f;
   --bg2: #141418;
   --bg3: #1c1c22;
@@ -13,35 +13,39 @@
   --amber: #f0c060;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'JetBrains Mono', monospace;
+  background: var( --bg );
+  color: var( --text );
+  font-family: "JetBrains Mono", monospace;
   min-height: 100vh;
   padding: 48px 20px 80px;
 }
 
 .card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var( --bg2 );
+  border: 1px solid var( --border );
   border-radius: 4px;
 }
 
 .card-title {
-  font-family: 'Noto Sans JP', sans-serif;
+  font-family: "Noto Sans JP", sans-serif;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--pink);
+  color: var( --pink );
 }
 
 .result-label {
   font-size: 0.62rem;
   letter-spacing: 0.12em;
-  color: var(--text-dim);
+  color: var( --text-dim );
   text-transform: uppercase;
   margin-bottom: 12px;
 }

@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { DIRS } from '../lib/notifier'
+import { DIRS } from "../lib/notifier"
 
 /** Indices into DIRS, in the observed firing order */
-const selected = defineModel<number[]>({ required: true })
+const selected = defineModel< number[] >( { required: true } )
 
-function addDir(idx: number) {
-  if (selected.value.length >= 7 || selected.value.includes(idx)) return
-  selected.value = [...selected.value, idx]
+function addDir( idx: number ) {
+  if ( selected.value.length >= 7 || selected.value.includes( idx ) ) return
+  selected.value = [ ...selected.value, idx ]
 }
 
-function removeSlot(i: number) {
-  if (i >= selected.value.length) return
-  selected.value = selected.value.filter((_, j) => j !== i)
+function removeSlot( i: number ) {
+  if ( i >= selected.value.length ) return
+  selected.value = selected.value.filter( ( _, j ) => j !== i )
 }
 
 function clearOrder() {
