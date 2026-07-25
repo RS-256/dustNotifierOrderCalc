@@ -1,0 +1,49 @@
+# https://rs256.net/actions/ で生成。自由に編集してよい。
+# PR ごとに走らせる検査。ジョブ間に依存を張っていないため、
+# 1 回の実行で失敗をまとめて確認できる。
+# https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax
+name: CI
+on:
+  pull_request:
+    branches: [main]
+# 既定は権限なし。各ジョブで必要な分だけ付与する。
+permissions: {}
+concurrency:
+  group: "ci-${{ github.event.pull_request.number }}"
+  cancel-in-progress: true
+jobs:
+  # 成果物がビルドできることを確認する。
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+  # 上の検査がすべて通り、かつ Dependabot の PR のときだけマージする。
+  auto-merge:
+    needs: [build]
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    # Dependabot 起点の実行では GITHUB_TOKEN が既定 read-only のため、ここで明示的に付与する。
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      # メジャー更新は自動マージせず人力レビューに回す。
+      - name: Merge
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --merge "$PR_URL"
+        env:
+          PR_URL: "${{ github.event.pull_request.html_url }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

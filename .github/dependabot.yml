@@ -1,38 +1,33 @@
-# Dependabot 設定
+# https://rs256.net/actions/ で生成。自由に編集してよい。
+# 依存関係の自動更新設定。
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 version: 2
 updates:
-  # npm（Astro / Tailwind などの依存関係）
+  # Node.js の依存関係（package.json）。
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore(deps)"
-      prefix-development: "chore(deps-dev)"
+    open-pull-requests-limit: 5
+    # まとめられた更新は 1 本の PR になるため、1 度のビルド通過でまとめてマージされる。
     groups:
       minor-and-patch:
         update-types:
           - "minor"
           - "patch"
-
-  # GitHub Actions（ワークフローで使うアクション）
+  # .github/workflows で使っているアクション。
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 5
-    commit-message:
-      prefix: "chore(ci)"
+    # まとめられた更新は 1 本の PR になるため、1 度のビルド通過でまとめてマージされる。
     groups:
-      github-actions:
+      minor-and-patch:
         update-types:
           - "minor"
           - "patch"
